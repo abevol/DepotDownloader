@@ -84,7 +84,7 @@ namespace DepotDownloader
                     using var ds = new DeflateStream(fs, CompressionMode.Decompress);
                     Instance = Serializer.Deserialize<AccountSettingsStore>(ds);
                 }
-                catch (IOException ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine("Failed to load account settings: {0}", ex.Message);
                     fs.Dispose();

@@ -385,6 +385,16 @@ namespace DepotDownloader
                         Console.WriteLine($"Account \"{username}\" has stored credentials. Did you forget to specify -remember-password?");
                     }
 
+                    // If we have no stored token and no password, fail clearly instead of
+                    // prompting interactively (which hangs in CI/headless environments).
+                    if (ContentDownloader.Config.RememberPassword && Console.IsInputRedirected)
+                    {
+                        Console.Error.WriteLine(
+                            $"Error: No saved login token for \"{username}\" and -password not provided.\n" +
+                            "Run DepotDownloader once with -password and -remember-password to save a token.");
+                        return false;
+                    }
+
                     do
                     {
                         Console.Write("Enter account password for \"{0}\": ", username);
