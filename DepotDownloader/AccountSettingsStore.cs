@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.IO.IsolatedStorage;
+using System.Security.Cryptography;
+using System.Text;
 using ProtoBuf;
 
 namespace DepotDownloader
@@ -76,9 +78,15 @@ namespace DepotDownloader
             if (Loaded)
                 throw new Exception("Config already loaded");
 
+            var storePath = CustomStorePath != null
+                ? Path.Combine(CustomStorePath, filename)
+                : "(IsolatedStorage)";
+            Console.Error.WriteLine("[account.config] source: {0}", storePath);
+
             var fs = OpenRead(filename);
             if (fs != null)
             {
+                Console.Error.WriteLine("[account.config] file found, size: {0} bytes", fs.Length);
                 try
                 {
                     using var ds = new DeflateStream(fs, CompressionMode.Decompress);
@@ -86,6 +94,7 @@ namespace DepotDownloader
                 }
                 catch (Exception ex)
                 {
+                    Console.Error.WriteLine("[account.config] deserialize failed: {0}", ex.GetType().Name);
                     Console.WriteLine("Failed to load account settings: {0}", ex.Message);
                     fs.Dispose();
                     Instance = new AccountSettingsStore();
@@ -93,10 +102,20 @@ namespace DepotDownloader
             }
             else
             {
+                Console.Error.WriteLine("[account.config] file not found, using empty store");
                 Instance = new AccountSettingsStore();
             }
 
             Instance.FileName = filename;
+
+            // Diagnostic: summarize loaded tokens without revealing values
+            Console.Error.WriteLine("[account.config] LoginTokens count: {0}", Instance.LoginTokens.Count);
+            Console.Error.WriteLine("[account.config] GuardData count: {0}", Instance.GuardData.Count);
+            foreach (var key in Instance.LoginTokens.Keys)
+            {
+                var keyHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+                Console.Error.WriteLine("[account.config] token key hash: {0} (len={1})", keyHash, key.Length);
+            }
         }
 
         public static void Save()
