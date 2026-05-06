@@ -105,10 +105,11 @@ Parameter               | Description
 
 #### Other
 
-Parameter               | Description
------------------------ | -----------
-`-debug`                | enable verbose debug logging.
-`-V` or `--version`     | print version and runtime.
+Parameter                    | Description
+---------------------------- | -----------
+`-debug`                     | enable verbose debug logging.
+`-V` or `--version`          | print version and runtime.
+`--account-store-path <path>` | custom directory for account.config storage, bypassing IsolatedStorage for CI/headless use.
 
 ## Frequently Asked Questions
 

@@ -32,5 +32,11 @@ namespace DepotDownloader
 
         public bool UseQrCode { get; set; }
         public bool SkipAppConfirmation { get; set; }
+
+        /// <summary>
+        /// Custom directory for account.config storage, bypassing IsolatedStorage.
+        /// When set, account.config is read from and written to this directory.
+        /// </summary>
+        public string AccountStorePath { get; set; }
     }
 }

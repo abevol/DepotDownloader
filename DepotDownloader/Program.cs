@@ -38,6 +38,24 @@ namespace DepotDownloader
 
             DebugLog.Enabled = false;
 
+            // Parse --account-store-path early (before LoadFromFile), but without using
+            // GetParameter since consumedArgs isn't initialized yet.
+            string accountStorePath = null;
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].Equals("--account-store-path", StringComparison.OrdinalIgnoreCase)
+                    && i + 1 < args.Length)
+                {
+                    accountStorePath = args[i + 1];
+                    break;
+                }
+            }
+
+            if (accountStorePath != null)
+            {
+                AccountSettingsStore.CustomStorePath = accountStorePath;
+            }
+
             AccountSettingsStore.LoadFromFile("account.config");
 
             #region Common Options
@@ -50,6 +68,18 @@ namespace DepotDownloader
             }
 
             consumedArgs = new bool[args.Length];
+
+            // Mark --account-store-path and its value as consumed
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].Equals("--account-store-path", StringComparison.OrdinalIgnoreCase)
+                    && i + 1 < args.Length)
+                {
+                    consumedArgs[i] = true;
+                    consumedArgs[i + 1] = true;
+                    break;
+                }
+            }
 
             if (HasParameter(args, "-debug"))
             {
@@ -518,6 +548,8 @@ namespace DepotDownloader
             Console.WriteLine("                             use -username <username> -remember-password as login credentials.");
             Console.WriteLine("  -qr                      - display a login QR code to be scanned with the Steam mobile app");
             Console.WriteLine("  -no-mobile               - prefer entering a 2FA code instead of prompting to accept in the Steam mobile app");
+            Console.WriteLine("  --account-store-path <path> - custom directory for account.config storage,");
+            Console.WriteLine("                                bypasses IsolatedStorage for CI/headless use.");
             Console.WriteLine();
             Console.WriteLine("  -dir <installdir>        - the directory in which to place downloaded files.");
             Console.WriteLine("  -filelist <file.txt>     - the name of a local file that contains a list of files to download (from the manifest).");

@@ -44,22 +44,50 @@ namespace DepotDownloader
         public static AccountSettingsStore Instance;
         static readonly IsolatedStorageFile IsolatedStorage = IsolatedStorageFile.GetUserStoreForAssembly();
 
+        /// <summary>
+        /// When set, LoadFromFile and Save use this directory instead of IsolatedStorage.
+        /// </summary>
+        public static string CustomStorePath;
+
+        static Stream OpenRead(string filename)
+        {
+            if (CustomStorePath != null)
+            {
+                var path = Path.Combine(CustomStorePath, filename);
+                return File.Exists(path) ? File.OpenRead(path) : null;
+            }
+            return IsolatedStorage.FileExists(filename)
+                ? IsolatedStorage.OpenFile(filename, FileMode.Open, FileAccess.Read)
+                : null;
+        }
+
+        static Stream OpenWrite(string filename)
+        {
+            if (CustomStorePath != null)
+            {
+                Directory.CreateDirectory(CustomStorePath);
+                return File.Create(Path.Combine(CustomStorePath, filename));
+            }
+            return IsolatedStorage.OpenFile(filename, FileMode.Create, FileAccess.Write);
+        }
+
         public static void LoadFromFile(string filename)
         {
             if (Loaded)
                 throw new Exception("Config already loaded");
 
-            if (IsolatedStorage.FileExists(filename))
+            var fs = OpenRead(filename);
+            if (fs != null)
             {
                 try
                 {
-                    using var fs = IsolatedStorage.OpenFile(filename, FileMode.Open, FileAccess.Read);
                     using var ds = new DeflateStream(fs, CompressionMode.Decompress);
                     Instance = Serializer.Deserialize<AccountSettingsStore>(ds);
                 }
                 catch (IOException ex)
                 {
                     Console.WriteLine("Failed to load account settings: {0}", ex.Message);
+                    fs.Dispose();
                     Instance = new AccountSettingsStore();
                 }
             }
@@ -78,7 +106,7 @@ namespace DepotDownloader
 
             try
             {
-                using var fs = IsolatedStorage.OpenFile(Instance.FileName, FileMode.Create, FileAccess.Write);
+                using var fs = OpenWrite(Instance.FileName);
                 using var ds = new DeflateStream(fs, CompressionMode.Compress);
                 Serializer.Serialize(ds, Instance);
             }
